@@ -17,21 +17,42 @@ class BratsDataset(Dataset):
         self.transforms = transforms
 
         self.file_names_suffix = ["_flair", "_t1", "_t1ce", "_t2"]
+        self.dim_mapping = {i:string.removeprefix("_") for i, string in enumerate(self.file_names_suffix)}
     
+
+    def load_sample_input(self, index):
+        imgs = []
+        for suffix in self.file_names_suffix:
+            img = nib.load(f"{self.root}/{self.name_mapping[index]}/{self.name_mapping[index]}{suffix}.nii")
+            imgs.append(img.get_fdata())
+        stacked = np.stack(imgs, -1)
+        return torch.from_numpy(stacked)
+
+
+    def load_sample_seg(self, index):
+        seg = nib.load(f"{self.root}/{self.name_mapping[index]}/{self.name_mapping[index]}_seg.nii").get_fdata()
+        return torch.from_numpy(seg)
+
+
     def __len__(self):
         return len(self.name_mapping)
     
+    
     def __getitem__(self, idx):
-        imgs = []
-        for suffix in self.file_names_suffix:
-            img = nib.load(f"{self.root}/{self.name_mapping[idx]}/{self.name_mapping[idx]}{suffix}.nii")
-            imgs.append(img.get_fdata())
-        stacked = np.stack(imgs, -1)
-        seg = img = nib.load(f"{self.root}/{self.name_mapping[idx]}/{self.name_mapping[idx]}_seg.nii")
-        print(seg.shape)
-        print(stacked.shape)
+        print(idx)
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        stacked_input = self.load_sample_input(idx)
+        segmentation = self.load_sample_seg(idx)
+        
+
+        if self.transforms:
+            stacked_input = self.transforms(stacked_input)
+
+        return (stacked_input, segmentation)
 
 
 
 dataset = BratsDataset()
-dataset[0]
+
