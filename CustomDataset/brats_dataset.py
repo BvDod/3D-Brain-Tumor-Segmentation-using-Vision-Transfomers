@@ -24,7 +24,11 @@ class BratsDataset(Dataset):
         imgs = []
         for suffix in self.file_names_suffix:
             img = nib.load(f"{self.root}/{self.name_mapping[index]}/{self.name_mapping[index]}{suffix}.nii")
-            imgs.append(img.get_fdata())
+            img_numpy = img.get_fdata()
+            img_numpy = img_numpy/img_numpy.max()
+            imgs.append(img_numpy)
+            print(img_numpy.max())
+
         stacked = np.stack(imgs, -1)
         return torch.from_numpy(stacked)
 
