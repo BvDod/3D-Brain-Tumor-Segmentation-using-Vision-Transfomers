@@ -7,6 +7,10 @@ from torch.utils.tensorboard import SummaryWriter
 
 from CustomDataset.brats_dataset import BratsDataset
 
+from functions import visualize
+import matplotlib.pyplot as plt
+
+import segmentation_models_pytorch_3d as smp
 
 def train(settings):
 
@@ -25,21 +29,27 @@ def train(settings):
 
     dataloader_train = DataLoader(dataset_train, batch_size=settings["batch_size"], shuffle=True, drop_last=True, pin_memory=True)
     dataloader_test = DataLoader(dataset_val, batch_size=settings["batch_size"], pin_memory=True)
+    
+    input_shape, mask_shape = [tensor.shape for tensor in dataset_train[0]]
+    print(input_shape, mask_shape)
 
     # Setting up model
-    """
     model_settings = settings["model_settings"]
-    model_settings["num_channels"] = channels
+    model_settings["num_channels"] = input_shape[3]
     model_settings["input_shape"] = input_shape
     model_settings["device"] = device
-
-    model = VIT(model_settings).to(device)
-    if settings["print_debug"]:
-        print(summary(VIT(), input_size=(256, 1,32,32)))
  
+
+    model = smp.Unet(
+    encoder_name="efficientnet-b0", # choose encoder, e.g. resnet34
+    in_channels=4,                  # model input channels (1 for gray-scale volumes, 3 for RGB, etc.)
+    classes=4,                      # model output channels (number of classes in your dataset)
+    )
+    model.to(device)
+
     optimizer = torch.optim.Adam(model.parameters(), lr=settings["learning_rate"], amsgrad=False, weight_decay=1e-3)
     loss_function = torch.nn.CrossEntropyLoss()
-    """
+    
 
     # Training loop
     train_losses, test_losses = [], []
@@ -51,6 +61,12 @@ def train(settings):
         # model.train()
         for batch_i, (x_train, y_train) in enumerate(dataloader_train):
             x_train, y_train = x_train.to(device), y_train.to(device)
+            print(x_train.shape)
+            
+            res = model(x_train)
+            
+
+
            
             #pred = model(x_train)
             #loss = loss_function(pred, y_train)
@@ -107,14 +123,14 @@ if __name__ == "__main__":
 
         "print_debug": False,
         "example_image_amount": 8,
-        "batch_size": 8,
+        "batch_size": 1,
         "learning_rate": 1e-3, # for Mnsist
         "max_epochs": 100,
         "early_stopping_epochs": 50,
 
         "model_settings" : {
-            "patch_size": 4,
-            "embedding_size": 128,
+            "patch_size": 32,
+            "embedding_size": 256,
             "attention_heads": 4,
             "transformer_layers": 5
         }
