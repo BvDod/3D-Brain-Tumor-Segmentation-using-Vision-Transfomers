@@ -13,9 +13,11 @@ def add_segmentation_to_image(x, y, x_channel=0, dim=None):
     """
     displays seg (y) on top of image input (x)
     """
+    print(x.shape, y.shape)
+    x = x.movedim(0, -1)
     x, y = x.cpu().numpy(), y.cpu().numpy()
     x = x[:,:,:,x_channel].squeeze() # Select channel and make 2d
-
+    y = y.squeeze()
     shape = x.shape
     images = []
 
@@ -28,6 +30,7 @@ def add_segmentation_to_image(x, y, x_channel=0, dim=None):
             
             colors_slice = select_color_subsection_labels(y_slice, colors)
             image = color.label2rgb(y_slice.astype(int),image=x_slice,colors=colors_slice,alpha=0.1, bg_label=0, bg_color=None)
+            np.moveaxis(image, -1, 0)
             images.append(image)
     
     # Orientation is specified
@@ -38,7 +41,21 @@ def add_segmentation_to_image(x, y, x_channel=0, dim=None):
         colors_slice = select_color_subsection_labels(y_slice, colors)
         image = color.label2rgb(y_slice.astype(int),image=x_slice,colors=colors_slice, alpha=0.1, bg_label=0, bg_color=None)
         images.append(image)
-    return images
+    
+    # Pad all images to the same size
+    x_max = max(img.shape[0] for img in images)
+    y_max = max(img.shape[1] for img in images)
+    images_padded = []
+    for image in images:
+        x, y, _ = image.shape
+        x_pad = (x_max - x) //2
+        y_pad = (y_max - y) //2
+        image_padded = np.pad(image,pad_width=[(x_pad, x_pad), (y_pad, y_pad), (0,0)] ,mode="constant", constant_values=0)
+        image_padded = np.moveaxis(image_padded, -1, 0)
+        images_padded.append(image_padded)
+        
+    # Return batched images
+    return np.stack(images_padded)
 
 
 def select_color_subsection_labels(labels, colors):
@@ -87,7 +104,7 @@ if __name__ == "__main__":
     print(f"Random index: {random_sample}")
     x, y = dataset[random_sample]
     print(np.unique(x))
-    create_segmentation_png_seq(x, y, "test/001/", x_channel=1, dim=1,)
+    # create_segmentation_png_seq(x, y, "test/001/", x_channel=1, dim=1,)
     images = add_segmentation_to_image(x, y)
     for image in images:
         print(np.unique(image.astype(np.uint8)))

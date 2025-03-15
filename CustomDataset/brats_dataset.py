@@ -7,16 +7,23 @@ import numpy as np
 from torch.utils.data import Dataset
 import nibabel as nib
 
+import gzip
+import numpy
+
+import os
 class BratsDataset(Dataset):
     """" My custom dataset used to load the brats2020 dataset """
 
-    def __init__(self, transforms=None):
+    def __init__(self, transforms = None, device="cuda"):
         self.root = "dataset/BraTS2020_TrainingData/MICCAI_BraTS2020_TrainingData/"
         self.csv = self.root + "name_mapping.csv"
+
+        self.device = device
 
         # List of all sample names
         self.name_mapping = list(pd.read_csv(self.csv)["BraTS_2020_subject_ID"])
         self.transforms = transforms
+
 
         self.file_names_suffix = ["_flair", "_t1", "_t1ce", "_t2"]
 
@@ -30,17 +37,20 @@ class BratsDataset(Dataset):
         imgs = []
         for suffix in self.file_names_suffix:
             img = nib.load(f"{self.root}/{self.name_mapping[index]}/{self.name_mapping[index]}{suffix}.nii")
-            img_numpy = img.get_fdata()
-            img_numpy = img_numpy/img_numpy.max()
-            imgs.append(img_numpy)
-
-        stacked = np.stack(imgs, -1)
-        return torch.from_numpy(stacked).float()
+            img_tensor = torch.from_numpy(img.get_fdata())
+            img_tensor = img_tensor/img_tensor.max()
+            imgs.append(img_tensor)
+        
+        stacked = torch.stack(imgs, -1).float()
+        
+        return stacked
 
 
     def load_sample_seg(self, index):
         seg = nib.load(f"{self.root}/{self.name_mapping[index]}/{self.name_mapping[index]}_seg.nii").get_fdata()
-        return torch.from_numpy(seg).float()
+        seg = torch.from_numpy(seg).long()
+  
+        return seg
 
 
     def __len__(self):
@@ -54,9 +64,19 @@ class BratsDataset(Dataset):
         stacked_input = self.load_sample_input(idx)
         segmentation = self.load_sample_seg(idx)
 
+        # convert int label to onehot
+        segmentation = torch.nn.functional.one_hot(segmentation, num_classes=5)
+        
+
+        
+        stacked_input = stacked_input.movedim(-1, 0)
+        segmentation = segmentation.movedim(-1, 0)
+
+        train_sample = {"image": stacked_input, "label": segmentation}
+        
         if self.transforms:
-            stacked_input = self.transforms(stacked_input)
-        return (stacked_input, segmentation)
+            return self.transforms(train_sample)
+        return {"image": stacked_input, "label": segmentation}
 
 
 
