@@ -1,5 +1,5 @@
 # 3D Vision Transformer for Brain Tumor Segmentation
-<p align="center">
+<p float="left">
     <img src="images/1.gif" />
     <img src="images/2.gif"/> 
     <img src="images/3.gif"/>
