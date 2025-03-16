@@ -53,15 +53,17 @@ def train(settings):
  
     model = VIT(model_settings)
     model.to(device)
+    model.load_state_dict(torch.load("models/saved_models/model_latest.pt", weights_only=True))
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=settings["learning_rate"], amsgrad=False)
-    loss_function = monai.losses.DiceLoss(softmax=True)
+    optimizer = torch.optim.Adam(model.parameters(), lr=settings["learning_rate"], weight_decay=1e-5, betas=(0.99, 0.999))
+    loss_function = monai.losses.DiceCELoss(softmax=True)
     
     scaler = torch.amp.GradScaler("cuda" ,enabled=True)
 
     best_loss = 1000
     # Training loop
     train_losses, test_losses = [], []
+    accum_iter = 1
     for epoch in range(settings["max_epochs"]):
         train_losses_epoch = []
         print(f"Epoch: {epoch}/{settings["max_epochs"]}")
@@ -75,14 +77,17 @@ def train(settings):
             with torch.autocast(device_type=device, dtype=torch.float16, enabled=True):
                 res = model(x_train)
                 loss = loss_function(res, y_train)
+                train_losses_epoch.append(loss.item())
+                loss = loss / accum_iter
             
             scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+
+            # weights update
+            if ((batch_i + 1) % accum_iter == 0) or (batch_i + 1 == len(dataloader_train)):
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad()
             
-            train_losses_epoch.append(loss.item())
-            optimizer.zero_grad()
-            print(train_losses_epoch[-1])
             writer.add_scalar("Loss/test (iteration)", train_losses_epoch[-1], epoch*len(dataloader_train) + batch_i)
 
             if batch_i % 10 == 0:
@@ -146,7 +151,7 @@ if __name__ == "__main__":
 
         "print_debug": False,
         "batch_size": 2,
-        "learning_rate": 3e-4, # for Mnsist
+        "learning_rate": 1e-4, # for Mnsist
         "max_epochs": 100,
         "early_stopping_epochs": 50,
 

@@ -53,7 +53,7 @@ class PositionalEmbedding(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, model_settings, dropout=0.1):
+    def __init__(self, model_settings, dropout=0.0):
         """ 
         """
         super(TransformerBlock, self).__init__()

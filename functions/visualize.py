@@ -21,15 +21,18 @@ def add_segmentation_to_image(x, y, x_channel=0, dim=None):
     shape = x.shape
     images = []
 
-    colors = [(255,0,0),(0,0,255),(0,255,0), (0,125,125)]
+    colors = [(125,125,0),(0,0,255),(0,255,0), (255,0,0)]
     # If make seg images in all orientations
     if not dim:
         for dim in range(0,3):
+            
             x_slice = np.take(x, indices = shape[dim]//2, axis=dim)
             y_slice = np.take(y, indices = shape[dim]//2, axis=dim)
-            
+            x_slice = color.gray2rgb(x_slice)
+
             colors_slice = select_color_subsection_labels(y_slice, colors)
-            image = color.label2rgb(y_slice.astype(int),image=x_slice,colors=colors_slice,alpha=0.1, bg_label=0, bg_color=None)
+            x_slice = x_slice * 255
+            image = color.label2rgb(y_slice.astype(int),image=x_slice,colors=colors_slice,alpha=0.75, bg_label=0, bg_color=None)
             np.moveaxis(image, -1, 0)
             images.append(image)
     
@@ -39,7 +42,7 @@ def add_segmentation_to_image(x, y, x_channel=0, dim=None):
         y_slice = np.take(y, indices = shape[dim]//2, axis=dim)
 
         colors_slice = select_color_subsection_labels(y_slice, colors)
-        image = color.label2rgb(y_slice.astype(int),image=x_slice,colors=colors_slice, alpha=0.1, bg_label=0, bg_color=None)
+        image = color.label2rgb(y_slice.astype(int),image=x_slice,colors=colors_slice, alpha=0.75, bg_label=0, bg_color=None)
         images.append(image)
     
     # Pad all images to the same size
@@ -85,12 +88,13 @@ def create_segmentation_png_seq(x, y, foldername, x_channel=1, dim=1):
         x_slice = color.gray2rgb(np.take(x,indices=i, axis=dim))
         y_slice = np.take(y, indices = i, axis=dim)
 
-        colors = [(255,0,0),(0,0,255),(0,255,0), (0,125,125)]
+        colors = [(125,125,0),(0,0,255),(0,255,0), (255,0,0)]
         colors_slice = select_color_subsection_labels(y_slice, colors)
 
-        image = color.label2rgb(y_slice.astype(int),image=x_slice,colors=colors_slice,alpha=0.1, bg_label=0, bg_color=None)
+        x_slice = x_slice * 255
+        image = color.label2rgb(y_slice.astype(int),image=x_slice,colors=colors_slice,alpha=0.75, bg_label=0, bg_color=None)
 
-        array = (image*255).astype(np.uint8)
+        array = (image).astype(np.uint8)
         image = im.fromarray(array)
 
         Path(foldername).mkdir(parents=True, exist_ok=True)

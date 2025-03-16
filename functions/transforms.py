@@ -1,5 +1,5 @@
 import monai
-from monai.transforms import RandFlipd, NormalizeIntensityd, NormalizeIntensityd, RandScaleIntensityd, RandShiftIntensityd, RandSpatialCropd
+from monai.transforms import RandFlipd, NormalizeIntensityd, NormalizeIntensityd, RandScaleIntensityd, RandShiftIntensityd, RandSpatialCropd, SpatialCropd
 from torchvision import transforms
 
 def get_transforms_3d(patch_size):
@@ -8,9 +8,13 @@ def get_transforms_3d(patch_size):
         RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=0),
         RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=1),
         RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=2),
-        NormalizeIntensityd(keys="image", nonzero=True, channel_wise=True),
-        RandScaleIntensityd(keys="image", factors=0.1, prob=1.0),
-        RandShiftIntensityd(keys="image", offsets=0.1, prob=1.0),
+        monai.transforms.DivisiblePadd(keys=["image", "label"], k=patch_size),
+    ])
+    return transforms
+
+def get_transforms_3d_val(patch_size):
+    transforms = monai.transforms.Compose([
+        SpatialCropd(keys=["image", "label"], roi_center=(120, 120, 75), roi_size=(192, 192, 128)),
         monai.transforms.DivisiblePadd(keys=["image", "label"], k=patch_size),
     ])
     return transforms
