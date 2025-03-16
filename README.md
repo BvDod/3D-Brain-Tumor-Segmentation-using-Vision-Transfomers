@@ -1,14 +1,14 @@
 # 3D Vision Transformer for Brain Tumor Segmentation
-The repository contains a Pytorch implementation of a 3D Vision Transformer, by adapting a 2D ViT I implemented in an earlier project (link). The architecture is based on UNETR, and uses skip connections to process multi-scale information
-
-The 3D ViT was then used to effectively perform Tumor Segmentation on MRIs from the BraTS2020 dataset, utilizing. full-resolution 3D MRIs.
-<p float="left">
+<p float="center">
     <img src="images/1.gif" />
     <img src="images/2.gif"/> 
     <img src="images/3.gif"/>
-</p>
-
+</p
 *A GIF of an example of a predicted segmentation from the test-set*
+
+The repository contains a Pytorch implementation of a 3D Vision Transformer, by adapting a 2D ViT I implemented in an earlier project (link). The architecture is based on UNETR, and uses skip connections to process multi-scale information
+
+The 3D ViT was then used to effectively perform Tumor Segmentation on MRIs from the BraTS2020 dataset, utilizing. full-resolution 3D MRIs.
 
 ## The Architecture
 A traditional Vision Transformer works by cutting the original image in patches (eg. 8x8), generating a learned embedding for each patch, adding a positional embedding to each patch embedding, and then using several transformer layers as described in *"Attention Is All You Need"
