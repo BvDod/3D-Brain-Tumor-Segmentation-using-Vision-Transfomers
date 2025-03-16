@@ -15,7 +15,8 @@ A traditional Vision Transformer works by cutting the original image in patches 
 
 A 3D Vision Transformer simply uses 3D patches (eg 8x8x8), instead of 2D patches. In the UnetR architecture, skip connections, with attached feature extraction blocks, are connected between parts of the encoder and decoder in a "U" like fashion. This allows the model to process multi-scale information, and combats the loss of finer detail as the network deepens.
 
-![alt text](images/val.png)
+![alt text](images/image.png)
+
 *Visualization of the UnetR architecture, sourced from the UnetR paper by Hatamizadeh et al*
 
 ## Tumor Segmentation: BraTS2020
