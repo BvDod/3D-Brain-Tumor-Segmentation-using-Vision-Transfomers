@@ -2,10 +2,11 @@
 The repository contains a Pytorch implementation of a 3D Vision Transformer, by adapting a 2D ViT I implemented in an earlier project (link). The architecture is based on UNETR, and uses skip connections to process multi-scale information
 
 The 3D ViT was then used to effectively perform Tumor Segmentation on MRIs from the BraTS2020 dataset, utilizing. full-resolution 3D MRIs.
-
-<img src="images/1.gif" />
-<img src="images/2.gif"/> 
-<img src="images/3.gif"/>
+<p float="left">
+    <img src="images/1.gif" />
+    <img src="images/2.gif"/> 
+    <img src="images/3.gif"/>
+</p>
 
 *A GIF of an example of a predicted segmentation from the test-set*
 
@@ -14,7 +15,7 @@ A traditional Vision Transformer works by cutting the original image in patches 
 
 A 3D Vision Transformer simply uses 3D patches (eg 8x8x8), instead of 2D patches. In the UnetR architecture, skip connections, with attached feature extraction blocks, are connected between parts of the encoder and decoder in a "U" like fashion. This allows the model to process multi-scale information, and combats the loss of finer detail as the network deepens.
 
-![alt text](image.png)
+![alt text](images/val.png)
 *Visualization of the UnetR architecture, sourced from the UnetR paper by Hatamizadeh et al*
 
 ## Tumor Segmentation: BraTS2020
