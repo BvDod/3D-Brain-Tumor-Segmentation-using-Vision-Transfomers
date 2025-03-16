@@ -4,6 +4,7 @@
     <img src="images/2.gif"/> 
     <img src="images/3.gif"/>
 </p
+
 *A GIF of an example of a predicted segmentation from the test-set*
 
 The repository contains a Pytorch implementation of a 3D Vision Transformer, by adapting a 2D ViT I implemented in an earlier project (link). The architecture is based on UNETR, and uses skip connections to process multi-scale information
