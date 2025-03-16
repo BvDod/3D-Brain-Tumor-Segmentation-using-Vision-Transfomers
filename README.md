@@ -25,7 +25,7 @@ The BraTS2020 is a dataset focussing on the segmentation of brain tumors using M
 
 I trained my implemented 3D ViT on 80% of the training data, keeping 20% as validation data. I  I used a patch size of 32x32x32, embedding size of 256, 8 transformer layers, and an input resolution of 192x192x128 by randomly cropping the original image.
 
-After 70 epochs, the trained model achieved a mean DICE score of X on the validation set.
+After 70 epochs, the trained model achieved a mean DICE score of 0.704 on the validation set.
 
 ![alt text](images/val.png)
 
