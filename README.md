@@ -9,14 +9,14 @@
 
 This repository contains a Pytorch implementation of a 3D Vision Transformer, by adapting a 2D ViT I implemented in an earlier project (see github projects). The architecture is based on UNETR, and uses skip connections to process multi-scale information
 
-The 3D ViT was then used to effectively perform brain tumor segmentation on MRIs from the BraTS2020 dataset, utilizing full-resolution 3D MRIs.
+The 3D ViT was then used to effectively perform brain tumor segmentation on MRIs from the BraTS2020 dataset, utilizing full-resolution 3D MRIs. see ```models/vit3d.py``` for the code of the model, and see ```train.py``` for training loop for the brain tumor segmentation.
 
 ## The Architecture: 3D ViT (UneTR)
 A traditional Vision Transformer works by cutting the original image in patches (eg. 8x8), generating a learned embedding for each patch, adding a positional embedding to each patch embedding, and then using several transformer layers as described in *"Attention Is All You Need"*
 
 A 3D Vision Transformer uses 3D patches (eg 8x8x8), instead of 2D patches. In the UnetR architecture, skip connections, with attached feature extraction blocks, are connected between parts of the encoder and decoder in a "U" like fashion. This allows the model to process multi-scale information and combats the loss of finer detail as the network deepens.
 
-My Pytorch implementation of a UNETR-like 3D Vision Transformer can be found in ```models/vit.py```
+My Pytorch implementation of a UNETR-like 3D Vision Transformer can be found in ```models/vit3d.py```
 
 ![alt text](images/image.png)
 
