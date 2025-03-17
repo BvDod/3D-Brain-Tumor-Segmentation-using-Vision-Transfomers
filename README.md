@@ -7,7 +7,7 @@
 
 *A GIF of an example of a predicted segmentation from the test-set*
 
-This repository contains a Pytorch implementation of a 3D Vision Transformer, by adapting a 2D ViT I implemented in an earlier project (see github projects). The architecture is based on UNETR, and uses skip connections to process multi-scale information
+This repository contains a Pytorch implementation of a 3D Vision Transformer, by adapting a 2D ViT I implemented in an earlier project [(link)](https://github.com/BvDod/Vision-Transformer-VIT-PyTorch). The architecture is based on UNETR, and uses skip connections to process multi-scale information
 
 The 3D ViT was then used to effectively perform brain tumor segmentation on MRIs from the BraTS2020 dataset, utilizing full-resolution 3D MRIs. see ```models/vit3d.py``` for the code of the model, and see ```train.py``` for training loop for the brain tumor segmentation.
 
