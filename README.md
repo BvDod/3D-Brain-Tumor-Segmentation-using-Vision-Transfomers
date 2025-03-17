@@ -1,4 +1,4 @@
-# 3D Vision Transformer for Brain Tumor MRI Segmentation \n (UNETR implementation in PyTorch)
+# 3D Vision Transformer for Brain Tumor MRI Segmentation <br>(UNETR implementation in PyTorch)
 <p float="left">
     <img src="images/1.gif" />
     <img src="images/2.gif"/> 
