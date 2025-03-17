@@ -1,32 +1,19 @@
 
 import torch
-from torch.utils.data import DataLoader
+import monai
+import os
 
-from torchinfo import summary
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from CustomDataset.brats_dataset import BratsDataset
-
-from functions import visualize
-import matplotlib.pyplot as plt
-
-import segmentation_models_pytorch_3d as smp
-
 from functions.transforms import get_transforms_3d
-
-from models.vit import VIT
-
-import monai
-
+from models.vit3d import VIT3Dsegmentation
 from functions.visualize import add_segmentation_to_image
 
-import numpy as np
 
 def train(settings):
-
-    # Tensorboard for logging
-    writer = SummaryWriter()
-    # Tensorboard doesnt support dicts in hparam dict so lets unpack
+    writer = SummaryWriter()    # Tensorboard for logging
 
     # Print settings and info
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -36,14 +23,12 @@ def train(settings):
     # Loading dataset
     transforms = get_transforms_3d(settings["model_settings"]["patch_size"])
     dataset = BratsDataset(transforms=transforms, device=device)
-    dataset_train, dataset_val = torch.utils.data.random_split(dataset, [0.8, 0.2])
+    dataset_train, _ = torch.utils.data.random_split(dataset, [0.8, 0.2])
 
     dataloader_train = DataLoader(dataset_train, batch_size=settings["batch_size"], shuffle=True, drop_last=True, pin_memory=False, num_workers = 6)
-    dataloader_test = DataLoader(dataset_val, batch_size=settings["batch_size"], pin_memory=False, num_workers = 6)
     
     train_sample = dataset_train[0]
     input_shape, mask_shape = train_sample["image"].shape, train_sample["label"].shape
-    print(input_shape, mask_shape)
 
     # Setting up model
     model_settings = settings["model_settings"]
@@ -51,25 +36,30 @@ def train(settings):
     model_settings["input_shape"] = input_shape
     model_settings["device"] = device
  
-    model = VIT(model_settings)
+    model = VIT3Dsegmentation(model_settings)
     model.to(device)
-    model.load_state_dict(torch.load("models/saved_models/model_latest.pt", weights_only=True))
 
+    # Continue training from checkpoint
+    if settings["continue_training"]:
+        model.load_state_dict(torch.load("models/saved_models/model_latest.pt", weights_only=True)) 
+
+    # We use higher momentum beta because of low batch size
     optimizer = torch.optim.Adam(model.parameters(), lr=settings["learning_rate"], weight_decay=1e-5, betas=(0.99, 0.999))
+    
+    # Combines dice and cross entropy loss
     loss_function = monai.losses.DiceCELoss(softmax=True)
     
     scaler = torch.amp.GradScaler("cuda" ,enabled=True)
-
-    best_loss = 1000
+    best_loss = None
+   
     # Training loop
     train_losses, test_losses = [], []
-    accum_iter = 1
     for epoch in range(settings["max_epochs"]):
-        train_losses_epoch = []
-        print(f"Epoch: {epoch}/{settings["max_epochs"]}")
         
-        # Training
-        # model.train()
+        train_losses_epoch = []
+        
+        print(f"Epoch: {epoch}/{settings["max_epochs"]}")
+        model.train()
         for batch_i, train_sample in enumerate(dataloader_train):
             x_train, y_train = train_sample["image"], train_sample["label"], 
             x_train, y_train = x_train.to(device), y_train.to(device)
@@ -78,18 +68,19 @@ def train(settings):
                 res = model(x_train)
                 loss = loss_function(res, y_train)
                 train_losses_epoch.append(loss.item())
-                loss = loss / accum_iter
+                loss = loss / settings["batch_accumulation_iter"] # scale loss to batch size
             
             scaler.scale(loss).backward()
 
-            # weights update
-            if ((batch_i + 1) % accum_iter == 0) or (batch_i + 1 == len(dataloader_train)):
+            # weights update if batch_accumulation_iter is reached
+            if ((batch_i + 1) % settings["batch_accumulation_iter"] == 0) or (batch_i + 1 == len(dataloader_train)):
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
             
-            writer.add_scalar("Loss/test (iteration)", train_losses_epoch[-1], epoch*len(dataloader_train) + batch_i)
+            writer.add_scalar("Loss/train (iteration)", train_losses_epoch[-1], epoch*len(dataloader_train) + batch_i)
 
+            # Log sample segmentation image every 10th batch
             if batch_i % 10 == 0:
                 pred = res.detach().movedim(1,-1).argmax(dim=-1)
                 images = add_segmentation_to_image(x_train[0].detach().cpu(), pred[0].cpu())
@@ -100,10 +91,12 @@ def train(settings):
         train_losses.append(sum(train_losses_epoch) / len(train_losses_epoch))
         writer.add_scalar("Loss/train", train_losses[-1], epoch)
 
-        import os
+        # Save model every epoch
         path = f"models/saved_models/"
         os.makedirs(path, exist_ok = True) 
         torch.save(model.state_dict(), path + "model_latest.pt")
+        
+        # Save best model
         if train_losses[-1] < best_loss:
             torch.save(model.state_dict(), path + f"model_best({epoch}).pt")
             best_loss = train_losses[-1]
@@ -138,28 +131,24 @@ def train(settings):
         """
               
 
-    # Save trained model to disk
-    if settings["save_model"]:
-        import os
-        path = f"models/saved_models/{settings["dataset"]}/"
-        os.makedirs(path, exist_ok = True) 
-        torch.save(model.state_dict(), path + "model.pt")
-
 if __name__ == "__main__":
     settings = {
-        "dataset": "MNIST",
-
-        "print_debug": False,
         "batch_size": 2,
         "learning_rate": 1e-4, # for Mnsist
         "max_epochs": 100,
         "early_stopping_epochs": 50,
 
+        "batch_accumulation_iter": 1,
+
+        "continue_training": False,
+
         "model_settings" : {
             "patch_size": 32,
             "embedding_size": 256,
             "attention_heads": 8,
-            "transformer_layers": 8
+            "transformer_layers": 8,
+            "output_classes": 5,
         }
+        
     }
     train(settings)

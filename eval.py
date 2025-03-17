@@ -1,16 +1,12 @@
-# %%
 import torch
+import numpy as np
+
+from monai.metrics import DiceMetric
 
 from functions.transforms import get_transforms_3d_val
 from CustomDataset.brats_dataset import BratsDataset
-from models.vit import VIT
+from models.vit3d import VIT3Dsegmentation
 from torch.utils.data import DataLoader
-from functions import visualize
-
-import numpy as np
-
-from PIL import Image as im
-from pathlib import Path
 
 torch.manual_seed(0)
 
@@ -28,10 +24,9 @@ settings = {
         "embedding_size": 256,
         "attention_heads": 8,
         "transformer_layers": 8
-    }
-    }
+    }}
 
- # Print settings and info
+# Print settings and info
 device = "cpu" if torch.cuda.is_available() else "cpu"
 print(str(settings))
 print(f"Device: {device}" + "\n")
@@ -54,16 +49,12 @@ model_settings["num_channels"] = input_shape[0]
 model_settings["input_shape"] = input_shape
 model_settings["device"] = device
 
-model = VIT(model_settings)
+model = VIT3Dsegmentation(model_settings)
 model.to(device)
 model.load_state_dict(torch.load("models/saved_models/model_latest.pt", weights_only=True))
 
 
-model.eval() 
-
-# %%
-from monai.metrics import DiceMetric
-
+# Evaluate Model
 dice_metric = DiceMetric(include_background=True)
 model.eval()
 with torch.no_grad(): 
@@ -76,31 +67,3 @@ with torch.no_grad():
         dice_metric(y_pred=pred, y=y_test)
     metric = dice_metric.aggregate().item()
     print(f"Mean Dice score: {metric}")
-
-    visualize.create_segmentation_png_seq(x_test[0], pred[0], "prediction0/", dim=0)
-    visualize.create_segmentation_png_seq(x_test[0], y_test[0], "ground_truth0/", dim=0)
-    visualize.create_segmentation_png_seq(x_test[0], pred[0], "prediction1/", dim=1)
-    visualize.create_segmentation_png_seq(x_test[0], y_test[0], "ground_truth1/", dim=1)
-    visualize.create_segmentation_png_seq(x_test[0], pred[0], "prediction2/", dim=2)
-    visualize.create_segmentation_png_seq(x_test[0], y_test[0], "ground_truth2/", dim=2)
-    """
-    x_test = x_test.movedim(-1,1)
-    images = visualize.add_segmentation_to_image(x_test[0], pred[0])
-    images = np.concatenate(images, axis=2)
-    array = images.astype(np.uint8)
-    array = np.moveaxis(array, 0,-1)
-    image = im.fromarray(array)
-    foldername = "prediction/"
-    Path(foldername).mkdir(parents=True, exist_ok=True)
-    image.save(f"{foldername}output.png")
-
-    images = visualize.add_segmentation_to_image(x_test[0], y_test[0])
-    images = np.concatenate(images, axis=2)
-    array = images.astype(np.uint8)
-    array = np.moveaxis(array, 0,-1)
-    image = im.fromarray(array)
-    foldername = "ground_truth/"
-    Path(foldername).mkdir(parents=True, exist_ok=True)
-    image.save(f"{foldername}output.png")
-    """
-

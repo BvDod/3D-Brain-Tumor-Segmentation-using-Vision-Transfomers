@@ -9,19 +9,23 @@ from pathlib import Path
 
 from PIL import Image as im 
 
+
 def add_segmentation_to_image(x, y, x_channel=0, dim=None):
     """
     displays seg (y) on top of image input (x)
+    x_channel: which channel to use for the image
+    dim: which dimension to display the segmentation on. If None, all orientations are returned
     """
-    print(x.shape, y.shape)
+
     x = x.movedim(0, -1)
     x, y = x.cpu().numpy(), y.cpu().numpy()
     x = x[:,:,:,x_channel].squeeze() # Select channel and make 2d
     y = y.squeeze()
     shape = x.shape
+    
     images = []
-
-    colors = [(125,125,0),(0,0,255),(0,255,0), (255,0,0)]
+    colors = [(125,125,0),(0,0,255),(0,255,0), (255,0,0)] # Colors for each class
+    
     # If make seg images in all orientations
     if not dim:
         for dim in range(0,3):
@@ -99,20 +103,4 @@ def create_segmentation_png_seq(x, y, foldername, x_channel=1, dim=1):
 
         Path(foldername).mkdir(parents=True, exist_ok=True)
         image.save(f"{foldername}{i}{dim}{x_channel}.png")
-
-
-
-if __name__ == "__main__":
-    dataset = BratsDataset()
-    random_sample = random.randint(0,len(dataset)-1)
-    print(f"Random index: {random_sample}")
-    x, y = dataset[random_sample]
-    print(np.unique(x))
-    # create_segmentation_png_seq(x, y, "test/001/", x_channel=1, dim=1,)
-    images = add_segmentation_to_image(x, y)
-    for image in images:
-        print(np.unique(image.astype(np.uint8)))
-        plt.imshow(image)
-        plt.show()
-
 

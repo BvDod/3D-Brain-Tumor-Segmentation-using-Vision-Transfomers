@@ -25,7 +25,7 @@ My Pytorch implementation of a UNETR-like 3D Vision Transformer can be found in 
 ## Tumor Segmentation task: BraTS2020
 The BraTS2020 is a dataset focusing on the segmentation of brain tumors using MRIs. There are a total of 369 labelled images with a resolution of 240x240x155. Each image has 4 different MRI channels: T1, T1Gd, T3 and FLAIR. The tumors are labelled using 3 different labels: non-enhancing tumor core (1), the peritumoral edema (2), and GD-enhancing tumor (4).
 
-I trained my implemented 3D ViT on 80% of the training data, keeping 20% as validation data. I used a patch size of 32x32x32, an embedding size of 256, 8 transformer layers, and an input resolution of 192x192x128 by randomly cropping the original image.
+I trained my implemented 3D ViT on 80% of the training data, keeping 20% as validation data. I used a patch size of 32x32x32, an embedding size of 256, 8 transformer layers, and an input resolution of 192x192x128 by randomly cropping the original image. The script used to train this model can be found in ```train.py```
 
 After 70 epochs, the trained model achieved a mean DICE score of 0.704 on the validation set.
 
